@@ -158,29 +158,25 @@ http://localhost:8080/swagger
 ---
 
 ## Struttura del progetto
-src/
-├── main/
-│   ├── java/com/academy/eventhub/
-│   │   ├── api/          ← Controller REST
-│   │   ├── dto/          ← DTO di request e response
-│   │   ├── entity/       ← Entità JPA
-│   │   ├── exception/    ← Eccezioni custom e GlobalExceptionHandler
-│   │   ├── mapper/       ← Mapper MapStruct
-│   │   ├── repository/   ← Repository Spring Data JPA
-│   │   ├── security/     ← Configurazione Spring Security
-│   │   └── service/      ← Logica di business
-│   └── resources/
-│       ├── static/
-│       │   ├── css/      ← Fogli di stile
-│       │   ├── html/     ← Pagine HTML
-│       │   └── js/       ← Script JavaScript
-│       └── application.properties
-└── test/
-└── java/com/academy/eventhub/service/
-├── EventServiceTest.java
-└── TicketServiceTest.java
 
----
+**Backend** — `src/main/java/com/academy/eventhub/`
+- `api/` — Controller REST
+- `dto/` — DTO di request e response
+- `entity/` — Entità JPA
+- `exception/` — Eccezioni custom e GlobalExceptionHandler
+- `mapper/` — Mapper MapStruct
+- `repository/` — Repository Spring Data JPA
+- `security/` — Configurazione Spring Security
+- `service/` — Logica di business
+
+**Frontend** — `src/main/resources/static/`
+- `css/` — Fogli di stile
+- `html/` — Pagine HTML
+- `js/` — Script JavaScript
+
+**Test** — `src/test/java/com/academy/eventhub/service/`
+- `EventServiceTest.java`
+- `TicketServiceTest.java`
 
 ## Esecuzione dei test
 
