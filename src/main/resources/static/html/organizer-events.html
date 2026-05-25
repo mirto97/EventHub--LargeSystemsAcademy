@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub — I miei eventi</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth.js"></script>
+</head>
+<body>
+
+    <nav id="navbar"></nav>
+
+    <h2>I miei eventi</h2>
+
+    <button id="btnNewEvent">+ Crea nuovo evento</button>
+
+    <div id="eventForm" style="display:none;">
+        <h3 id="formTitle">Nuovo evento</h3>
+        <input type="hidden" id="editEventId">
+        <div><label>Titolo</label><input type="text" id="title" required></div>
+        <div><label>Descrizione</label><textarea id="description"></textarea></div>
+        <div><label>Data inizio</label><input type="datetime-local" id="startDate" required></div>
+        <div><label>Data fine</label><input type="datetime-local" id="endDate" required></div>
+        <div><label>Prezzo Standard €</label><input type="number" id="standardPrice" step="0.01" min="0" required></div>
+        <div><label>Prezzo VIP €</label><input type="number" id="vipPrice" step="0.01" min="0" required></div>
+        <div>
+            <label>Sede</label>
+            <select id="venueId" required></select>
+        </div>
+        <div>
+            <label>Tag</label>
+            <select id="tagIds" multiple></select>
+        </div>
+        <div>
+            <label>Relatori</label>
+            <select id="speakerIds" multiple></select>
+        </div>
+        <button id="btnSaveEvent">Salva</button>
+        <button onclick="closeForm()">Annulla</button>
+        <p id="eventFormMsg"></p>
+    </div>
+
+    <div id="myEventsList"></div>
+
+    <div id="participantsList" style="display:none;">
+        <h3>Partecipanti</h3>
+        <button onclick="document.getElementById('participantsList').style.display='none'">Chiudi</button>
+        <div id="participantsContent"></div>
+    </div>
+
+    <script>
+        if (!isLoggedIn()) window.location.href = '/html/login.html';
+
+        const user = getUser();
+        if (user && user.role !== 'ORGANIZER' && user.role !== 'ADMIN') {
+            window.location.href = '/html/events.html';
+        }
+
+        renderNavbar();
+        loadMyEvents();
+        loadFormData();
+
+        document.getElementById('btnNewEvent').addEventListener('click', () => {
+            document.getElementById('editEventId').value = '';
+            document.getElementById('formTitle').textContent = 'Nuovo evento';
+            document.getElementById('eventForm').reset
+            resetForm();
+            document.getElementById('eventForm').style.display = 'block';
+        });
+
+        document.getElementById('btnSaveEvent').addEventListener('click', saveEvent);
+
+        function resetForm() {
+            ['title','description','startDate','endDate','standardPrice','vipPrice'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('eventFormMsg').textContent = '';
+        }
+
+        function closeForm() {
+            document.getElementById('eventForm').style.display = 'none';
+            resetForm();
+        }
+
+        async function loadFormData() {
+            const [venuesRes, tagsRes, speakersRes] = await Promise.all([
+                fetch('/venues'),
+                fetch('/tags'),
+                fetch('/speakers')
+            ]);
+
+            if (venuesRes.ok) {
+                const venues = await venuesRes.json();
+                const sel = document.getElementById('venueId');
+                venues.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = `${v.name} (capienza: ${v.capacity})`;
+                    sel.appendChild(opt);
+                });
+            }
+
+            if (tagsRes.ok) {
+                const tags = await tagsRes.json();
+                const sel = document.getElementById('tagIds');
+                tags.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.name;
+                    sel.appendChild(opt);
+                });
+            }
+
+            if (speakersRes.ok) {
+                const speakers = await speakersRes.json();
+                const sel = document.getElementById('speakerIds');
+                speakers.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.firstName} ${s.lastName}`;
+                    sel.appendChild(opt);
+                });
+            }
+        }
+
+        async function loadMyEvents() {
+            const response = await apiFetch('/events/my');
+            if (!response || !response.ok) return;
+
+            const events = await response.json();
+            const container = document.getElementById('myEventsList');
+
+            if (events.length === 0) {
+                container.innerHTML = '<p>Nessun evento creato.</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(event => `
+                <div>
+                    <h3>${event.title}</h3>
+                    <p><strong>Inizio:</strong> ${new Date(event.startDate).toLocaleString('it-IT')}</p>
+                    <p><strong>Sede:</strong> ${event.venue.name}</p>
+                    <p><strong>Posti disponibili:</strong> ${event.availableSeats}</p>
+                    <button onclick="editEvent(${event.id})">Modifica</button>
+                    <button onclick="deleteEvent(${event.id})">Elimina</button>
+                    <button onclick="loadParticipants(${event.id})">Partecipanti</button>
+                </div>
+                <hr>
+            `).join('');
+        }
+
+        async function editEvent(eventId) {
+            const response = await fetch(`/events/${eventId}`);
+            if (!response.ok) return;
+            const event = await response.json();
+
+            document.getElementById('editEventId').value = event.id;
+            document.getElementById('formTitle').textContent = 'Modifica evento';
+            document.getElementById('title').value = event.title;
+            document.getElementById('description').value = event.description || '';
+            document.getElementById('startDate').value = event.startDate.slice(0, 16);
+            document.getElementById('endDate').value = event.endDate.slice(0, 16);
+            document.getElementById('standardPrice').value = event.standardPrice;
+            document.getElementById('vipPrice').value = event.vipPrice;
+            document.getElementById('venueId').value = event.venue.id;
+
+            // seleziona i tag esistenti
+            const tagSel = document.getElementById('tagIds');
+            const tagIds = event.tags.map(t => t.id.toString());
+            Array.from(tagSel.options).forEach(opt => {
+                opt.selected = tagIds.includes(opt.value);
+            });
+
+            // seleziona i relatori esistenti
+            const speakerSel = document.getElementById('speakerIds');
+            const speakerIds = event.speakers.map(s => s.id.toString());
+            Array.from(speakerSel.options).forEach(opt => {
+                opt.selected = speakerIds.includes(opt.value);
+            });
+
+            document.getElementById('eventForm').style.display = 'block';
+        }
+
+        async function saveEvent() {
+            const editId = document.getElementById('editEventId').value;
+            const isEdit = !!editId;
+
+            const tagIds = Array.from(document.getElementById('tagIds').selectedOptions).map(o => parseInt(o.value));
+            const speakerIds = Array.from(document.getElementById('speakerIds').selectedOptions).map(o => parseInt(o.value));
+
+            const body = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                standardPrice: parseFloat(document.getElementById('standardPrice').value),
+                vipPrice: parseFloat(document.getElementById('vipPrice').value),
+                venueId: parseInt(document.getElementById('venueId').value),
+                tagIds,
+                speakerIds
+            };
+
+            const url = isEdit ? `/events/${editId}` : '/events';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const response = await apiFetch(url, { method, body: JSON.stringify(body) });
+            const msg = document.getElementById('eventFormMsg');
+            if (!response) return;
+
+            if (response.ok) {
+                msg.style.color = 'green';
+                msg.textContent = isEdit ? 'Evento aggiornato!' : 'Evento creato!';
+                setTimeout(() => { closeForm(); loadMyEvents(); }, 1000);
+            } else {
+                const data = await response.json();
+                msg.style.color = 'red';
+                msg.textContent = data.error || 'Errore nel salvataggio.';
+            }
+        }
+
+        async function deleteEvent(eventId) {
+            if (!confirm('Sei sicuro di voler eliminare questo evento?')) return;
+
+            const response = await apiFetch(`/events/${eventId}`, { method: 'DELETE' });
+            if (!response) return;
+
+            if (response.ok) {
+                loadMyEvents();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Errore nell\'eliminazione.');
+            }
+        }
+
+        async function loadParticipants(eventId) {
+            const response = await apiFetch(`/events/${eventId}/participants`);
+            if (!response || !response.ok) return;
+
+            const tickets = await response.json();
+            const container = document.getElementById('participantsContent');
+
+            if (tickets.length === 0) {
+                container.innerHTML = '<p>Nessun partecipante.</p>';
+            } else {
+                container.innerHTML = tickets.map(t => `
+                    <div>
+                        <p><strong>Tipo:</strong> ${t.type} | <strong>Prezzo:</strong> €${t.price}</p>
+                    </div>
+                `).join('<hr>');
+            }
+
+            document.getElementById('participantsList').style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>

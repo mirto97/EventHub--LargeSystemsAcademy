@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub — Le mie prenotazioni</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth.js"></script>
+</head>
+<body>
+
+    <nav id="navbar"></nav>
+
+    <h2>Le mie prenotazioni</h2>
+    <div id="bookingsList"></div>
+
+    <div id="feedbackForm" style="display:none;">
+        <h3>Lascia un feedback</h3>
+        <input type="hidden" id="feedbackEventId">
+        <label>Voto:</label>
+        <select id="feedbackRating">
+            <option value="1">1 ★</option>
+            <option value="2">2 ★★</option>
+            <option value="3">3 ★★★</option>
+            <option value="4" selected>4 ★★★★</option>
+            <option value="5">5 ★★★★★</option>
+        </select>
+        <label>Commento:</label>
+        <textarea id="feedbackComment"></textarea>
+        <button id="btnFeedback">Invia feedback</button>
+        <button onclick="document.getElementById('feedbackForm').style.display='none'">Annulla</button>
+        <p id="feedbackMsg"></p>
+    </div>
+
+    <script>
+        if (!isLoggedIn()) window.location.href = '/html/login.html';
+
+        renderNavbar();
+        loadBookings();
+
+        async function loadBookings() {
+            const response = await apiFetch('/tickets/my');
+            if (!response || !response.ok) return;
+
+            const tickets = await response.json();
+            const container = document.getElementById('bookingsList');
+
+            if (tickets.length === 0) {
+                container.innerHTML = '<p>Nessuna prenotazione trovata.</p>';
+                return;
+            }
+
+            const now = new Date();
+
+            container.innerHTML = tickets.map(ticket => {
+                const isPast = ticket.eventEndDate ? new Date(ticket.eventEndDate) < now : false;
+                const isActive = ticket.status === 'ACTIVE';
+
+                let actions = '';
+                if (isActive && !isPast) {
+                    actions += `<button onclick="cancelTicket(${ticket.id})">Cancella prenotazione</button>`;
+                }
+                if (isActive && isPast) {
+                    actions += `<button onclick="showFeedbackForm(${ticket.eventId})">Lascia feedback</button>`;
+                }
+
+                return `
+                    <div>
+                        <h3>${ticket.eventTitle}</h3>
+                        <p><strong>Tipo:</strong> ${ticket.type} | <strong>Prezzo:</strong> €${ticket.price}</p>
+                        <p><strong>Stato:</strong> ${ticket.status}</p>
+                        ${actions}
+                    </div>
+                    <hr>
+                `;
+            }).join('');
+
+            document.getElementById('btnFeedback').addEventListener('click', submitFeedback);
+        }
+
+        async function cancelTicket(ticketId) {
+            if (!confirm('Sei sicuro di voler cancellare la prenotazione?')) return;
+
+            const response = await apiFetch(`/tickets/${ticketId}`, { method: 'DELETE' });
+            if (!response) return;
+
+            if (response.ok) {
+                alert('Prenotazione cancellata.');
+                loadBookings();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Errore nella cancellazione.');
+            }
+        }
+
+        function showFeedbackForm(eventId) {
+            document.getElementById('feedbackEventId').value = eventId;
+            document.getElementById('feedbackMsg').textContent = '';
+            document.getElementById('feedbackForm').style.display = 'block';
+        }
+
+        async function submitFeedback() {
+            const eventId = document.getElementById('feedbackEventId').value;
+            const rating = parseInt(document.getElementById('feedbackRating').value);
+            const comment = document.getElementById('feedbackComment').value;
+
+            const response = await apiFetch('/feedbacks', {
+                method: 'POST',
+                body: JSON.stringify({ eventId: parseInt(eventId), rating, comment })
+            });
+
+            const msg = document.getElementById('feedbackMsg');
+            if (!response) return;
+
+            if (response.ok) {
+                msg.style.color = 'green';
+                msg.textContent = 'Feedback inviato con successo!';
+                document.getElementById('feedbackForm').style.display = 'none';
+            } else {
+                const data = await response.json();
+                msg.style.color = 'red';
+                msg.textContent = data.error || 'Errore nell\'invio del feedback.';
+            }
+        }
+    </script>
+
+</body>
+</html>

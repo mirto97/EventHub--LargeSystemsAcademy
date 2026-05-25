@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub — Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth.js"></script>
+</head>
+<body>
+
+    <h1>EventHub</h1>
+    <h2>Login</h2>
+
+    <form id="loginForm">
+        <div>
+            <label for="email">Email</label>
+            <input type="email" id="email" required>
+        </div>
+        <div>
+            <label for="password">Password</label>
+            <input type="password" id="password" required>
+        </div>
+        <button type="submit">Accedi</button>
+        <p id="errorMsg" style="color:red; display:none;"></p>
+    </form>
+
+    <p>Non hai un account? <a href="/html/signup.html">Registrati</a></p>
+
+    <script>
+        if (isLoggedIn()) window.location.href = '/html/events.html';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const credentials = 'Basic ' + btoa(email + ':' + password);
+
+            sessionStorage.setItem(AUTH_KEY, credentials);
+
+            const response = await apiFetch('/me');
+
+            if (!response || !response.ok) {
+                sessionStorage.removeItem(AUTH_KEY);
+                const errorMsg = document.getElementById('errorMsg');
+                errorMsg.textContent = 'Credenziali non valide.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            const user = await response.json();
+            sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+
+            if (user.role === 'ADMIN') {
+                window.location.href = '/html/admin.html';
+            } else if (user.role === 'ORGANIZER') {
+                window.location.href = '/html/organizer-events.html';
+            } else {
+                window.location.href = '/html/events.html';
+            }
+        });
+    </script>
+
+</body>
+</html>

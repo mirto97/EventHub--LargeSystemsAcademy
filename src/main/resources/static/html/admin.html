@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub — Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth.js"></script>
+</head>
+<body>
+
+    <nav id="navbar"></nav>
+
+    <h2>Area Admin</h2>
+
+    <div id="tabs">
+        <button onclick="showTab('users')">Utenti</button>
+        <button onclick="showTab('venues')">Sedi</button>
+        <button onclick="showTab('speakers')">Relatori</button>
+        <button onclick="showTab('tags')">Tag</button>
+    </div>
+
+    <!-- TAB UTENTI -->
+    <div id="tab-users" class="tab-content">
+        <h3>Gestione Utenti</h3>
+        <div id="usersList"></div>
+    </div>
+
+    <!-- TAB SEDI -->
+    <div id="tab-venues" class="tab-content" style="display:none;">
+        <h3>Gestione Sedi</h3>
+        <form id="venueForm">
+            <input type="hidden" id="venueEditId">
+            <input type="text" id="venueName" placeholder="Nome sede" required>
+            <input type="text" id="venueAddress" placeholder="Indirizzo" required>
+            <input type="number" id="venueCapacity" placeholder="Capienza" min="1" required>
+            <button type="submit" id="btnSaveVenue">Salva sede</button>
+            <button type="button" onclick="resetVenueForm()">Annulla</button>
+            <p id="venueMsg"></p>
+        </form>
+        <div id="venuesList"></div>
+    </div>
+
+    <!-- TAB SPEAKER -->
+    <div id="tab-speakers" class="tab-content" style="display:none;">
+        <h3>Gestione Relatori</h3>
+        <form id="speakerForm">
+            <input type="hidden" id="speakerEditId">
+            <input type="text" id="speakerFirstName" placeholder="Nome" required>
+            <input type="text" id="speakerLastName" placeholder="Cognome" required>
+            <textarea id="speakerBio" placeholder="Biografia"></textarea>
+            <input type="url" id="speakerPhotoUrl" placeholder="URL foto">
+            <button type="submit" id="btnSaveSpeaker">Salva relatore</button>
+            <button type="button" onclick="resetSpeakerForm()">Annulla</button>
+            <p id="speakerMsg"></p>
+        </form>
+        <div id="speakersList"></div>
+    </div>
+
+    <!-- TAB TAG -->
+    <div id="tab-tags" class="tab-content" style="display:none;">
+        <h3>Gestione Tag</h3>
+        <form id="tagForm">
+            <input type="text" id="tagName" placeholder="Nome tag" required>
+            <button type="submit">Aggiungi tag</button>
+            <p id="tagMsg"></p>
+        </form>
+        <div id="tagsList"></div>
+    </div>
+
+    <script>
+        if (!isLoggedIn()) window.location.href = '/html/login.html';
+        const user = getUser();
+        if (user && user.role !== 'ADMIN') window.location.href = '/html/events.html';
+
+        renderNavbar();
+        showTab('users');
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+            if (tab === 'users') loadUsers();
+            if (tab === 'venues') loadVenues();
+            if (tab === 'speakers') loadSpeakers();
+            if (tab === 'tags') loadTags();
+        }
+
+        // ── UTENTI ──────────────────────────────────
+
+        async function loadUsers() {
+            const response = await apiFetch('/admin/users');
+            if (!response || !response.ok) return;
+            const users = await response.json();
+
+            document.getElementById('usersList').innerHTML = users.map(u => `
+                <div>
+                    <p><strong>${u.email}</strong> — ${u.role} — ${u.status}</p>
+                    ${u.role === 'USER' ? `<button onclick="promoteUser(${u.id})">Promuovi a ORGANIZER</button>` : ''}
+                    ${u.status === 'ACTIVE' && u.role !== 'ADMIN' ? `<button onclick="banUser(${u.id})">Banna</button>` : ''}
+                    ${u.status === 'BANNED' ? `<button onclick="reactivateUser(${u.id})">Riattiva</button>` : ''}
+                </div>
+                <hr>
+            `).join('');
+        }
+
+        async function promoteUser(id) {
+            const r = await apiFetch(`/admin/users/${id}/promote`, { method: 'PUT' });
+            if (r && r.ok) loadUsers();
+            else { const d = await r.json(); alert(d.error); }
+        }
+
+        async function banUser(id) {
+            if (!confirm('Bannare questo utente?')) return;
+            const r = await apiFetch(`/admin/users/${id}/ban`, { method: 'PUT' });
+            if (r && r.ok) loadUsers();
+            else { const d = await r.json(); alert(d.error); }
+        }
+
+        async function reactivateUser(id) {
+            const r = await apiFetch(`/admin/users/${id}/reactivate`, { method: 'PUT' });
+            if (r && r.ok) loadUsers();
+            else { const d = await r.json(); alert(d.error); }
+        }
+
+        // ── SEDI ──────────────────────────────────
+
+        async function loadVenues() {
+            const response = await fetch('/venues');
+            if (!response.ok) return;
+            const venues = await response.json();
+
+            document.getElementById('venuesList').innerHTML = venues.map(v => `
+                <div>
+                    <p><strong>${v.name}</strong> — ${v.address} — Capienza: ${v.capacity}</p>
+                    <button onclick="editVenue(${v.id}, '${v.name}', '${v.address}', ${v.capacity})">Modifica</button>
+                    <button onclick="deleteVenue(${v.id})">Elimina</button>
+                </div>
+                <hr>
+            `).join('');
+        }
+
+        document.getElementById('venueForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('venueEditId').value;
+            const body = {
+                name: document.getElementById('venueName').value,
+                address: document.getElementById('venueAddress').value,
+                capacity: parseInt(document.getElementById('venueCapacity').value)
+            };
+            const url = editId ? `/admin/venues/${editId}` : '/admin/venues';
+            const method = editId ? 'PUT' : 'POST';
+            const r = await apiFetch(url, { method, body: JSON.stringify(body) });
+            const msg = document.getElementById('venueMsg');
+            if (!r) return;
+            if (r.ok) {
+                msg.style.color = 'green';
+                msg.textContent = editId ? 'Sede aggiornata!' : 'Sede creata!';
+                resetVenueForm();
+                loadVenues();
+            } else {
+                const d = await r.json();
+                msg.style.color = 'red';
+                msg.textContent = d.error || 'Errore.';
+            }
+        });
+
+        function editVenue(id, name, address, capacity) {
+            document.getElementById('venueEditId').value = id;
+            document.getElementById('venueName').value = name;
+            document.getElementById('venueAddress').value = address;
+            document.getElementById('venueCapacity').value = capacity;
+        }
+
+        function resetVenueForm() {
+            document.getElementById('venueEditId').value = '';
+            document.getElementById('venueForm').reset();
+            document.getElementById('venueMsg').textContent = '';
+        }
+
+        async function deleteVenue(id) {
+            if (!confirm('Eliminare questa sede?')) return;
+            const r = await apiFetch(`/admin/venues/${id}`, { method: 'DELETE' });
+            if (r && r.ok) loadVenues();
+            else { const d = await r.json(); alert(d.error); }
+        }
+
+        // ── RELATORI ──────────────────────────────────
+
+        async function loadSpeakers() {
+            const response = await fetch('/speakers');
+            if (!response.ok) return;
+            const speakers = await response.json();
+
+            document.getElementById('speakersList').innerHTML = speakers.map(s => `
+                <div>
+                    <p><strong>${s.firstName} ${s.lastName}</strong></p>
+                    <button onclick="editSpeaker(${s.id}, '${s.firstName}', '${s.lastName}', \`${s.bio || ''}\`, '${s.photoUrl || ''}')">Modifica</button>
+                    <button onclick="deleteSpeaker(${s.id})">Elimina</button>
+                </div>
+                <hr>
+            `).join('');
+        }
+
+        document.getElementById('speakerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('speakerEditId').value;
+            const body = {
+                firstName: document.getElementById('speakerFirstName').value,
+                lastName: document.getElementById('speakerLastName').value,
+                bio: document.getElementById('speakerBio').value,
+                photoUrl: document.getElementById('speakerPhotoUrl').value
+            };
+            const url = editId ? `/admin/speakers/${editId}` : '/admin/speakers';
+            const method = editId ? 'PUT' : 'POST';
+            const r = await apiFetch(url, { method, body: JSON.stringify(body) });
+            const msg = document.getElementById('speakerMsg');
+            if (!r) return;
+            if (r.ok) {
+                msg.style.color = 'green';
+                msg.textContent = editId ? 'Relatore aggiornato!' : 'Relatore creato!';
+                resetSpeakerForm();
+                loadSpeakers();
+            } else {
+                const d = await r.json();
+                msg.style.color = 'red';
+                msg.textContent = d.error || 'Errore.';
+            }
+        });
+
+        function editSpeaker(id, firstName, lastName, bio, photoUrl) {
+            document.getElementById('speakerEditId').value = id;
+            document.getElementById('speakerFirstName').value = firstName;
+            document.getElementById('speakerLastName').value = lastName;
+            document.getElementById('speakerBio').value = bio;
+            document.getElementById('speakerPhotoUrl').value = photoUrl;
+        }
+
+        function resetSpeakerForm() {
+            document.getElementById('speakerEditId').value = '';
+            document.getElementById('speakerForm').reset();
+            document.getElementById('speakerMsg').textContent = '';
+        }
+
+        async function deleteSpeaker(id) {
+            if (!confirm('Eliminare questo relatore?')) return;
+            const r = await apiFetch(`/admin/speakers/${id}`, { method: 'DELETE' });
+            if (r && r.ok) loadSpeakers();
+            else { const d = await r.json(); alert(d.error); }
+        }
+
+        // ── TAG ──────────────────────────────────
+
+        async function loadTags() {
+            const response = await fetch('/tags');
+            if (!response.ok) return;
+            const tags = await response.json();
+
+            document.getElementById('tagsList').innerHTML = tags.map(t => `
+                <div>
+                    <span>${t.name}</span>
+                    <button onclick="deleteTag(${t.id})">Elimina</button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('tagForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('tagName').value;
+            const r = await apiFetch('/admin/tags', {
+                method: 'POST',
+                body: JSON.stringify({ name })
+            });
+            const msg = document.getElementById('tagMsg');
+            if (!r) return;
+            if (r.ok) {
+                msg.style.color = 'green';
+                msg.textContent = 'Tag creato!';
+                document.getElementById('tagName').value = '';
+                loadTags();
+            } else {
+                const d = await r.json();
+                msg.style.color = 'red';
+                msg.textContent = d.error || 'Errore.';
+            }
+        });
+
+        async function deleteTag(id) {
+            if (!confirm('Eliminare questo tag?')) return;
+            const r = await apiFetch(`/admin/tags/${id}`, { method: 'DELETE' });
+            if (r && r.ok) loadTags();
+            else { const d = await r.json(); alert(d.error); }
+        }
+    </script>
+
+</body>
+</html>

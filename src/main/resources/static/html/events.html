@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub — Eventi</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth.js"></script>
+</head>
+<body>
+
+    <nav id="navbar"></nav>
+
+    <h2>Eventi</h2>
+
+    <div id="filters">
+        <input type="datetime-local" id="filterDate">
+        <select id="filterTag">
+            <option value="">Tutti i tag</option>
+        </select>
+        <button id="btnFilter">Filtra</button>
+        <button id="btnReset">Reset</button>
+    </div>
+
+    <div id="eventsList"></div>
+
+    <script>
+        renderNavbar();
+        loadTags();
+        loadEvents();
+
+        document.getElementById('btnFilter').addEventListener('click', loadEvents);
+        document.getElementById('btnReset').addEventListener('click', () => {
+            document.getElementById('filterDate').value = '';
+            document.getElementById('filterTag').value = '';
+            loadEvents();
+        });
+
+        async function loadTags() {
+            const response = await fetch('/tags');
+            if (!response.ok) return;
+            const tags = await response.json();
+            const select = document.getElementById('filterTag');
+            tags.forEach(tag => {
+                const option = document.createElement('option');
+                option.value = tag.id;
+                option.textContent = tag.name;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadEvents() {
+            const date = document.getElementById('filterDate').value;
+            const tagId = document.getElementById('filterTag').value;
+
+            let url = '/events?';
+            if (date) url += `date=${date}&`;
+            if (tagId) url += `tagId=${tagId}&`;
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                document.getElementById('eventsList').innerHTML = '<p>Errore nel caricamento eventi.</p>';
+                return;
+            }
+
+            const events = await response.json();
+            const container = document.getElementById('eventsList');
+
+            if (events.length === 0) {
+                container.innerHTML = '<p>Nessun evento trovato.</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(event => `
+                <div>
+                    <h3><a href="/html/event-detail.html?id=${event.id}">${event.title}</a></h3>
+                    <p><strong>Inizio:</strong> ${new Date(event.startDate).toLocaleString('it-IT')}</p>
+                    <p><strong>Sede:</strong> ${event.venue.name} — ${event.venue.address}</p>
+                    <p><strong>Posti disponibili:</strong> ${event.availableSeats}</p>
+                    <p><strong>Prezzo standard:</strong> €${event.standardPrice} | <strong>VIP:</strong> €${event.vipPrice}</p>
+                    <p><strong>Tag:</strong> ${event.tags.map(t => t.name).join(', ') || '—'}</p>
+                    <a href="/html/event-detail.html?id=${event.id}">Vedi dettaglio →</a>
+                </div>
+                <hr>
+            `).join('');
+        }
+    </script>
+
+</body>
+</html>

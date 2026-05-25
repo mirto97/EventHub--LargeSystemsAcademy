@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub — Profilo</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth.js"></script>
+</head>
+<body>
+
+    <nav id="navbar"></nav>
+
+    <h2>Il mio profilo</h2>
+
+    <form id="profileForm">
+        <div>
+            <label>Nome</label>
+            <input type="text" id="firstName" required>
+        </div>
+        <div>
+            <label>Cognome</label>
+            <input type="text" id="lastName" required>
+        </div>
+        <div>
+            <label>Biografia</label>
+            <textarea id="bio"></textarea>
+        </div>
+        <div>
+            <label>Città</label>
+            <input type="text" id="city">
+        </div>
+        <div>
+            <label>URL foto profilo</label>
+            <input type="url" id="photoUrl">
+        </div>
+        <button type="submit" id="btnSave">Salva</button>
+        <p id="profileMsg"></p>
+    </form>
+
+    <script>
+        if (!isLoggedIn()) window.location.href = '/html/login.html';
+
+        renderNavbar();
+
+        let hasProfile = false;
+
+        loadProfile();
+
+        async function loadProfile() {
+            const response = await apiFetch('/me/profile');
+            if (!response) return;
+
+            if (response.ok) {
+                hasProfile = true;
+                const profile = await response.json();
+                document.getElementById('firstName').value = profile.firstName || '';
+                document.getElementById('lastName').value = profile.lastName || '';
+                document.getElementById('bio').value = profile.bio || '';
+                document.getElementById('city').value = profile.city || '';
+                document.getElementById('photoUrl').value = profile.photoUrl || '';
+            }
+            // 404 = profilo non ancora creato, il form è già vuoto
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const body = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                bio: document.getElementById('bio').value,
+                city: document.getElementById('city').value,
+                photoUrl: document.getElementById('photoUrl').value
+            };
+
+            const response = await apiFetch('/me/profile', {
+                method: hasProfile ? 'PUT' : 'POST',
+                body: JSON.stringify(body)
+            });
+
+            const msg = document.getElementById('profileMsg');
+            if (!response) return;
+
+            if (response.ok) {
+                hasProfile = true;
+                msg.style.color = 'green';
+                msg.textContent = 'Profilo salvato con successo!';
+            } else {
+                const data = await response.json();
+                msg.style.color = 'red';
+                msg.textContent = data.error || 'Errore nel salvataggio.';
+            }
+        });
+    </script>
+
+</body>
+</html>

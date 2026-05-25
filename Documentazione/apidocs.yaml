@@ -1,0 +1,1587 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+tags:
+- name: Speakers
+  description: "Catalogo relatori (lettura pubblica, scrittura solo ADMIN)"
+- name: Users
+  description: Area personale e gestione utenti (ADMIN)
+- name: Tickets
+  description: Prenotazione e cancellazione biglietti
+- name: Profile
+  description: Gestione profilo anagrafico dell'utente autenticato
+- name: Tags
+  description: "Catalogo categorie/argomenti (lettura pubblica, scrittura solo ADMIN)"
+- name: Feedbacks
+  description: Recensioni post-evento
+- name: Venues
+  description: "Catalogo sedi (lettura pubblica, scrittura solo ADMIN)"
+- name: Events
+  description: "Catalogo eventi, CRUD organizer e lista partecipanti"
+- name: Auth
+  description: Registrazione alla piattaforma
+paths:
+  /me/profile:
+    get:
+      tags:
+      - Profile
+      summary: Leggi il tuo profilo
+      description: Restituisce i dati anagrafici dell'utente autenticato.
+      operationId: getMyProfile
+      responses:
+        "200":
+          description: Profilo trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "404":
+          description: Profilo non ancora creato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "401":
+          description: Non autenticato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+    put:
+      tags:
+      - Profile
+      summary: Aggiorna il tuo profilo
+      description: Modifica i dati anagrafici dell'utente autenticato.
+      operationId: updateMyProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: Profilo aggiornato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "404":
+          description: Profilo non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "401":
+          description: Non autenticato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+    post:
+      tags:
+      - Profile
+      summary: Crea il tuo profilo
+      description: Crea il profilo anagrafico per l'utente autenticato. Può essere
+        fatto una sola volta.
+      operationId: createMyProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Profilo creato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "409":
+          description: Profilo già esistente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+        "401":
+          description: Non autenticato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDTO"
+  /events/{id}:
+    get:
+      tags:
+      - Events
+      summary: Dettaglio evento
+      description: "Include sede, organizer, relatori, tag, posti disponibili e valutazione\
+        \ media."
+      operationId: getEventById
+      parameters:
+      - name: id
+        in: path
+        description: ID evento
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Evento trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+        "404":
+          description: Evento non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+    put:
+      tags:
+      - Events
+      summary: Modifica un evento
+      description: ORGANIZER (solo i propri eventi) o ADMIN. Stesse validazioni della
+        creazione.
+      operationId: updateEvent
+      parameters:
+      - name: id
+        in: path
+        description: ID evento
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: Evento aggiornato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+        "403":
+          description: Non sei il creatore dell'evento
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+        "404":
+          description: Evento non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+    delete:
+      tags:
+      - Events
+      summary: Elimina un evento
+      description: ORGANIZER (solo i propri eventi) o ADMIN.
+      operationId: deleteEvent
+      parameters:
+      - name: id
+        in: path
+        description: ID evento
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "204":
+          description: Evento eliminato
+        "403":
+          description: Non sei il creatore dell'evento
+        "404":
+          description: Evento non trovato
+  /admin/venues/{id}:
+    put:
+      tags:
+      - Venues
+      summary: Modifica una sede esistente
+      description: Solo ADMIN.
+      operationId: updateVenue
+      parameters:
+      - name: id
+        in: path
+        description: ID sede
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VenueRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: Sede aggiornata
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+        "404":
+          description: Sede non trovata
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+    delete:
+      tags:
+      - Venues
+      summary: Elimina una sede
+      description: Solo ADMIN.
+      operationId: deleteVenue
+      parameters:
+      - name: id
+        in: path
+        description: ID sede
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "204":
+          description: Sede eliminata
+        "404":
+          description: Sede non trovata
+  /admin/users/{id}/reactivate:
+    put:
+      tags:
+      - Users
+      summary: Riattiva un utente bannato
+      description: Solo ADMIN.
+      operationId: reactivateUser
+      parameters:
+      - name: id
+        in: path
+        description: ID utente da riattivare
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Utente riattivato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "404":
+          description: Utente non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+  /admin/users/{id}/promote:
+    put:
+      tags:
+      - Users
+      summary: Promuove un utente a ORGANIZER
+      description: Solo ADMIN. Applicabile solo a utenti con ruolo USER.
+      operationId: promoteUser
+      parameters:
+      - name: id
+        in: path
+        description: ID utente da promuovere
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Ruolo aggiornato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "404":
+          description: Utente non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "409":
+          description: Utente non è USER o è ADMIN
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+  /admin/users/{id}/ban:
+    put:
+      tags:
+      - Users
+      summary: Banna un utente
+      description: Solo ADMIN. Non applicabile agli ADMIN. Cancella automaticamente
+        i biglietti futuri dell'utente.
+      operationId: banUser
+      parameters:
+      - name: id
+        in: path
+        description: ID utente da bannare
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Utente bannato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "404":
+          description: Utente non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "409":
+          description: Operazione non consentita (es. target è ADMIN)
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+  /admin/speakers/{id}:
+    put:
+      tags:
+      - Speakers
+      summary: Modifica un relatore esistente
+      description: Solo ADMIN.
+      operationId: updateSpeaker
+      parameters:
+      - name: id
+        in: path
+        description: ID relatore
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeakerRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: Relatore aggiornato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SpeakerResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SpeakerResponseDTO"
+        "404":
+          description: Relatore non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SpeakerResponseDTO"
+    delete:
+      tags:
+      - Speakers
+      summary: Elimina un relatore
+      description: Solo ADMIN.
+      operationId: deleteSpeaker
+      parameters:
+      - name: id
+        in: path
+        description: ID relatore
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "204":
+          description: Relatore eliminato
+        "404":
+          description: Relatore non trovato
+  /feedbacks:
+    post:
+      tags:
+      - Feedbacks
+      summary: Lascia un feedback
+      description: |
+        Permette all'utente autenticato di recensire un evento.
+        Vincoli: evento concluso, biglietto attivo presente, nessun feedback duplicato.
+      operationId: leaveFeedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Feedback registrato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FeedbackResponseDTO"
+        "400":
+          description: Voto non nel range 1-5
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FeedbackResponseDTO"
+        "404":
+          description: Evento non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FeedbackResponseDTO"
+        "409":
+          description: "Evento non concluso, nessun biglietto valido o feedback già\
+            \ presente"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FeedbackResponseDTO"
+  /events:
+    get:
+      tags:
+      - Events
+      summary: Lista eventi pubblici
+      description: |
+        Restituisce tutti gli eventi con posti disponibili calcolati.
+        Filtri opzionali combinabili: date (ISO-8601), tagId, venueId.
+        Esempio: /events?date=2025-06-01T00:00:00&tagId=3
+      operationId: getAllEvents
+      parameters:
+      - name: date
+        in: query
+        description: Filtra eventi con startDate > questa data (es. 2025-06-01T00:00:00)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: tagId
+        in: query
+        description: Filtra per ID tag
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: venueId
+        in: query
+        description: Filtra per ID sede
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Lista eventi
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventResponseDTO"
+        "400":
+          description: Formato data non valido
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventResponseDTO"
+    post:
+      tags:
+      - Events
+      summary: Crea un nuovo evento
+      description: ORGANIZER o ADMIN. La data di fine deve essere successiva alla
+        data di inizio.
+      operationId: createEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Evento creato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+        "400":
+          description: Dati non validi o date incoerenti
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+        "404":
+          description: "Venue, tag o speaker non trovati"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+        "403":
+          description: Accesso negato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventResponseDTO"
+  /events/{eventId}/book:
+    post:
+      tags:
+      - Tickets
+      summary: Prenota un biglietto
+      description: |
+        Prenota un biglietto (STANDARD o VIP) per l'evento specificato.
+        Il prezzo viene impostato automaticamente in base al tipo scelto.
+        Vincoli: evento futuro, nessuna doppia prenotazione, posti disponibili, utente non bannato.
+      operationId: bookTicket
+      parameters:
+      - name: eventId
+        in: path
+        description: ID evento
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Biglietto prenotato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TicketResponseDTO"
+        "400":
+          description: Tipo biglietto non valido
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TicketResponseDTO"
+        "404":
+          description: Evento non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TicketResponseDTO"
+        "409":
+          description: "Evento passato, doppia prenotazione, posti esauriti o utente\
+            \ bannato"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TicketResponseDTO"
+  /auth/signup:
+    post:
+      tags:
+      - Auth
+      summary: Registra un nuovo utente
+      description: Crea un account con ruolo USER e status ACTIVE. Non richiede autenticazione.
+      operationId: signup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Utente registrato con successo
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "400":
+          description: "Dati non validi (email malformata, password vuota)"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "409":
+          description: Email già in uso
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+  /admin/venues:
+    post:
+      tags:
+      - Venues
+      summary: Crea una nuova sede
+      description: Solo ADMIN.
+      operationId: createVenue
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VenueRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Sede creata
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+        "409":
+          description: Sede con lo stesso nome già esistente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+  /admin/tags:
+    post:
+      tags:
+      - Tags
+      summary: Crea un nuovo tag
+      description: Solo ADMIN.
+      operationId: createTag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Tag creato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TagResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TagResponseDTO"
+        "409":
+          description: Tag con lo stesso nome già esistente
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TagResponseDTO"
+  /admin/speakers:
+    post:
+      tags:
+      - Speakers
+      summary: Crea un nuovo relatore
+      description: Solo ADMIN.
+      operationId: createSpeaker
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeakerRequestDTO"
+        required: true
+      responses:
+        "201":
+          description: Relatore creato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SpeakerResponseDTO"
+        "400":
+          description: Dati non validi
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SpeakerResponseDTO"
+  /venues:
+    get:
+      tags:
+      - Venues
+      summary: Lista tutte le sedi
+      operationId: getAllVenues
+      responses:
+        "200":
+          description: Lista sedi
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VenueResponseDTO"
+  /venues/{id}:
+    get:
+      tags:
+      - Venues
+      summary: Dettaglio sede per ID
+      operationId: getVenueById
+      parameters:
+      - name: id
+        in: path
+        description: ID sede
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Sede trovata
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+        "404":
+          description: Sede non trovata
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VenueResponseDTO"
+  /tickets/my:
+    get:
+      tags:
+      - Tickets
+      summary: Le mie prenotazioni
+      description: Lista di tutti i biglietti dell'utente autenticato.
+      operationId: getMyTickets
+      responses:
+        "200":
+          description: Lista biglietti
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketResponseDTO"
+        "401":
+          description: Non autenticato
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketResponseDTO"
+  /tags:
+    get:
+      tags:
+      - Tags
+      summary: Lista tutti i tag
+      operationId: getAllTags
+      responses:
+        "200":
+          description: Lista tag
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TagResponseDTO"
+  /speakers:
+    get:
+      tags:
+      - Speakers
+      summary: Lista tutti i relatori
+      operationId: getAllSpeakers
+      responses:
+        "200":
+          description: Lista relatori
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpeakerResponseDTO"
+  /speakers/{id}:
+    get:
+      tags:
+      - Speakers
+      summary: Dettaglio relatore per ID
+      operationId: getSpeakerById
+      parameters:
+      - name: id
+        in: path
+        description: ID relatore
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Relatore trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SpeakerResponseDTO"
+        "404":
+          description: Relatore non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SpeakerResponseDTO"
+  /me:
+    get:
+      tags:
+      - Users
+      summary: Dati utente corrente
+      description: "Restituisce email, ruolo e status dell'utente autenticato."
+      operationId: getMe
+      responses:
+        "200":
+          description: Dati restituiti
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "401":
+          description: Non autenticato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+  /events/{id}/participants:
+    get:
+      tags:
+      - Events
+      summary: Lista partecipanti di un evento
+      description: ORGANIZER (solo i propri eventi) o ADMIN. Restituisce i biglietti
+        attivi.
+      operationId: getEventParticipants
+      parameters:
+      - name: id
+        in: path
+        description: ID evento
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Lista biglietti attivi
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketResponseDTO"
+        "403":
+          description: Non sei il creatore dell'evento
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketResponseDTO"
+        "404":
+          description: Evento non trovato
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketResponseDTO"
+  /events/{eventId}/rating:
+    get:
+      tags:
+      - Feedbacks
+      summary: Valutazione media di un evento
+      description: Pubblica. Restituisce la media dei voti (1-5).
+      operationId: getEventRating
+      parameters:
+      - name: eventId
+        in: path
+        description: ID evento
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Media calcolata (null se nessun feedback presente)
+          content:
+            '*/*':
+              schema:
+                type: number
+                format: double
+        "404":
+          description: Evento non trovato
+          content:
+            '*/*':
+              schema:
+                type: number
+                format: double
+  /events/{eventId}/feedbacks:
+    get:
+      tags:
+      - Feedbacks
+      summary: Feedback di un evento
+      description: Pubblica. Restituisce tutti i feedback lasciati per l'evento.
+      operationId: getEventFeedbacks
+      parameters:
+      - name: eventId
+        in: path
+        description: ID evento
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Lista feedback
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedbackResponseDTO"
+        "404":
+          description: Evento non trovato
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedbackResponseDTO"
+  /events/my:
+    get:
+      tags:
+      - Events
+      summary: I miei eventi
+      description: Lista degli eventi creati dall'organizer autenticato. ORGANIZER
+        o ADMIN.
+      operationId: getMyEvents
+      responses:
+        "200":
+          description: Lista eventi dell'organizer
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventResponseDTO"
+        "403":
+          description: Accesso negato
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventResponseDTO"
+  /admin/users:
+    get:
+      tags:
+      - Users
+      summary: Lista tutti gli utenti
+      description: Solo ADMIN.
+      operationId: getAllUsers
+      responses:
+        "200":
+          description: Lista utenti
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserResponseDTO"
+        "403":
+          description: Accesso negato
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserResponseDTO"
+  /admin/users/{id}:
+    get:
+      tags:
+      - Users
+      summary: Dettaglio utente per ID
+      description: Solo ADMIN.
+      operationId: getUserById
+      parameters:
+      - name: id
+        in: path
+        description: ID utente
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Utente trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "404":
+          description: Utente non trovato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+        "403":
+          description: Accesso negato
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+  /tickets/{id}:
+    delete:
+      tags:
+      - Tickets
+      summary: Cancella una prenotazione
+      description: Cancellazione consentita solo prima dell'inizio dell'evento. Il
+        biglietto viene marcato come CANCELLED.
+      operationId: cancelTicket
+      parameters:
+      - name: id
+        in: path
+        description: ID biglietto
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "204":
+          description: Prenotazione cancellata
+        "403":
+          description: Il biglietto non appartiene all'utente
+        "404":
+          description: Biglietto non trovato
+        "409":
+          description: Biglietto già cancellato o evento già iniziato
+  /admin/tags/{id}:
+    delete:
+      tags:
+      - Tags
+      summary: Elimina un tag
+      description: Solo ADMIN.
+      operationId: deleteTag
+      parameters:
+      - name: id
+        in: path
+        description: ID tag
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "204":
+          description: Tag eliminato
+        "404":
+          description: Tag non trovato
+  /admin/feedbacks/{id}:
+    delete:
+      tags:
+      - Feedbacks
+      summary: Elimina un feedback
+      description: Solo ADMIN. Moderazione contenuti inappropriati.
+      operationId: deleteFeedback
+      parameters:
+      - name: id
+        in: path
+        description: ID feedback
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "204":
+          description: Feedback eliminato
+        "404":
+          description: Feedback non trovato
+        "403":
+          description: Accesso negato
+components:
+  schemas:
+    UserProfileRequestDTO:
+      type: object
+      description: Dati per la creazione o aggiornamento del profilo utente
+      properties:
+        firstName:
+          type: string
+          description: Nome
+          example: Mario
+          minLength: 1
+        lastName:
+          type: string
+          description: Cognome
+          example: Rossi
+          minLength: 1
+        bio:
+          type: string
+          description: Biografia
+          example: Appassionato di eventi tech
+        city:
+          type: string
+          description: Città
+          example: Roma
+        photoUrl:
+          type: string
+          description: URL foto profilo
+          example: https://example.com/foto.jpg
+      required:
+      - firstName
+      - lastName
+    UserProfileResponseDTO:
+      type: object
+      description: Dati del profilo utente
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID profilo
+          example: 1
+        firstName:
+          type: string
+          description: Nome
+          example: Mario
+        lastName:
+          type: string
+          description: Cognome
+          example: Rossi
+        bio:
+          type: string
+          description: Biografia
+          example: Appassionato di eventi tech
+        city:
+          type: string
+          description: Città
+          example: Roma
+        photoUrl:
+          type: string
+          description: URL foto profilo
+          example: https://example.com/foto.jpg
+    EventRequestDTO:
+      type: object
+      description: Dati per la creazione o modifica di un evento
+      properties:
+        title:
+          type: string
+          description: Titolo dell'evento
+          example: Workshop Spring Boot
+          minLength: 1
+        description:
+          type: string
+          description: Descrizione dell'evento
+        startDate:
+          type: string
+          format: date-time
+          description: Data e ora di inizio
+          example: 2026-06-01T09:00:00
+        endDate:
+          type: string
+          format: date-time
+          description: Data e ora di fine
+          example: 2026-06-01T18:00:00
+        standardPrice:
+          type: number
+          description: Prezzo biglietto standard
+          example: 49.99
+          minimum: 0.0
+        vipPrice:
+          type: number
+          description: Prezzo biglietto VIP
+          example: 99.99
+          minimum: 0.0
+        venueId:
+          type: integer
+          format: int32
+          description: ID della sede
+          example: 1
+        tagIds:
+          type: array
+          description: Lista ID dei tag
+          example:
+          - 1
+          - 2
+          items:
+            type: integer
+            format: int32
+        speakerIds:
+          type: array
+          description: Lista ID dei relatori
+          example:
+          - 1
+          - 2
+          items:
+            type: integer
+            format: int32
+      required:
+      - endDate
+      - standardPrice
+      - startDate
+      - title
+      - venueId
+      - vipPrice
+    EventResponseDTO:
+      type: object
+      description: Dati di un evento
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID evento
+          example: 1
+        title:
+          type: string
+          description: Titolo
+          example: Workshop Spring Boot
+        description:
+          type: string
+          description: Descrizione
+        startDate:
+          type: string
+          format: date-time
+          description: Data e ora di inizio
+          example: 2026-06-01T09:00:00
+        endDate:
+          type: string
+          format: date-time
+          description: Data e ora di fine
+          example: 2026-06-01T18:00:00
+        standardPrice:
+          type: number
+          description: Prezzo standard
+          example: 49.99
+        vipPrice:
+          type: number
+          description: Prezzo VIP
+          example: 99.99
+        availableSeats:
+          type: integer
+          format: int32
+          description: Posti ancora disponibili
+          example: 42
+        venue:
+          $ref: "#/components/schemas/VenueResponseDTO"
+          description: Sede dell'evento
+        organizer:
+          $ref: "#/components/schemas/UserResponseDTO"
+          description: Organizzatore dell'evento
+        tags:
+          type: array
+          description: Tag dell'evento
+          items:
+            $ref: "#/components/schemas/TagResponseDTO"
+        speakers:
+          type: array
+          description: Relatori dell'evento
+          items:
+            $ref: "#/components/schemas/SpeakerResponseDTO"
+    SpeakerResponseDTO:
+      type: object
+      description: Dati di un relatore
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID relatore
+          example: 1
+        firstName:
+          type: string
+          description: Nome
+          example: Mario
+        lastName:
+          type: string
+          description: Cognome
+          example: Rossi
+        bio:
+          type: string
+          description: Biografia
+          example: Senior developer con 10 anni di esperienza
+        photoUrl:
+          type: string
+          description: URL foto
+          example: https://example.com/foto.jpg
+    TagResponseDTO:
+      type: object
+      description: Dati di un tag
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID tag
+          example: 1
+        name:
+          type: string
+          description: Nome del tag
+          example: Java
+    UserResponseDTO:
+      type: object
+      description: Dati pubblici di un utente
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID utente
+          example: 1
+        email:
+          type: string
+          description: Email utente
+          example: mario@example.com
+        role:
+          type: string
+          description: Ruolo utente
+          enum:
+          - USER
+          - ORGANIZER
+          - ADMIN
+          example: USER
+        status:
+          type: string
+          description: Stato utente
+          enum:
+          - ACTIVE
+          - BANNED
+          example: ACTIVE
+    VenueResponseDTO:
+      type: object
+      description: Dati di una sede
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID sede
+          example: 1
+        name:
+          type: string
+          description: Nome della sede
+          example: Centro Congressi Roma
+        address:
+          type: string
+          description: Indirizzo
+          example: "Via Roma 1, Roma"
+        capacity:
+          type: integer
+          format: int32
+          description: Capienza massima
+          example: 200
+    VenueRequestDTO:
+      type: object
+      description: Dati per la creazione o modifica di una sede
+      properties:
+        name:
+          type: string
+          description: Nome della sede
+          example: Centro Congressi Roma
+          minLength: 1
+        address:
+          type: string
+          description: Indirizzo
+          example: "Via Roma 1, Roma"
+          minLength: 1
+        capacity:
+          type: integer
+          format: int32
+          description: Capienza massima
+          example: 200
+          minimum: 1
+      required:
+      - address
+      - capacity
+      - name
+    SpeakerRequestDTO:
+      type: object
+      description: Dati per la creazione o modifica di un relatore
+      properties:
+        firstName:
+          type: string
+          description: Nome
+          example: Mario
+          minLength: 1
+        lastName:
+          type: string
+          description: Cognome
+          example: Rossi
+          minLength: 1
+        bio:
+          type: string
+          description: Biografia
+          example: Senior developer con 10 anni di esperienza
+        photoUrl:
+          type: string
+          description: URL foto
+          example: https://example.com/foto.jpg
+      required:
+      - firstName
+      - lastName
+    FeedbackRequestDTO:
+      type: object
+      description: Dati per lasciare un feedback su un evento
+      properties:
+        rating:
+          type: integer
+          format: int32
+          description: Voto da 1 a 5
+          example: 4
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          description: Commento opzionale
+          example: Evento molto interessante!
+        eventId:
+          type: integer
+          format: int32
+          description: ID dell'evento
+          example: 1
+      required:
+      - eventId
+      - rating
+    FeedbackResponseDTO:
+      type: object
+      description: Dati di un feedback
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID feedback
+          example: 1
+        rating:
+          type: integer
+          format: int32
+          description: Voto
+          example: 4
+        comment:
+          type: string
+          description: Commento
+          example: Evento molto interessante!
+        user:
+          $ref: "#/components/schemas/UserResponseDTO"
+          description: Utente che ha lasciato il feedback
+        eventId:
+          type: integer
+          format: int32
+          description: ID evento recensito
+          example: 1
+        eventTitle:
+          type: string
+          description: Titolo evento recensito
+          example: Workshop Spring Boot
+    TicketRequestDTO:
+      type: object
+      description: Dati per la prenotazione di un biglietto
+      properties:
+        type:
+          type: string
+          description: Tipo di biglietto
+          enum:
+          - STANDARD
+          - VIP
+          example: STANDARD
+        eventId:
+          type: integer
+          format: int32
+          description: ID dell'evento
+          example: 1
+      required:
+      - eventId
+      - type
+    TicketResponseDTO:
+      type: object
+      description: Dati di un biglietto prenotato
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID biglietto
+          example: 1
+        type:
+          type: string
+          description: Tipo di biglietto
+          enum:
+          - STANDARD
+          - VIP
+          example: STANDARD
+        price:
+          type: number
+          description: Prezzo pagato
+          example: 49.99
+        status:
+          type: string
+          description: Stato del biglietto
+          enum:
+          - ACTIVE
+          - CANCELLED
+          example: ACTIVE
+        eventId:
+          type: integer
+          format: int32
+          description: ID evento
+          example: 1
+        eventTitle:
+          type: string
+          description: Titolo evento
+          example: Workshop Spring Boot
+    SignupRequestDTO:
+      type: object
+      description: Dati per la registrazione di un nuovo utente
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email dell'utente
+          example: mario@example.com
+          minLength: 1
+        password:
+          type: string
+          description: Password dell'utente
+          example: password123
+          maxLength: 2147483647
+          minLength: 8
+      required:
+      - email
+      - password
+    TagRequestDTO:
+      type: object
+      description: Dati per la creazione di un tag
+      properties:
+        name:
+          type: string
+          description: Nome del tag
+          example: Java
+          minLength: 1
+      required:
+      - name

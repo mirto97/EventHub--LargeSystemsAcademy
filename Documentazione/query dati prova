@@ -1,0 +1,78 @@
+-- ─────────────────────────────────────
+-- VENUE
+-- ─────────────────────────────────────
+INSERT INTO venue (name, address, capacity) VALUES
+('Centro Congressi Roma', 'Via dei Congressi 1, Roma', 200),
+('Palazzo delle Arti Milano', 'Corso Buenos Aires 10, Milano', 150),
+('Tech Hub Napoli', 'Via Caracciolo 22, Napoli', 80),
+('Sala Innovazione Torino', 'Piazza Castello 5, Torino', 120),
+('Spazio Digitale Bologna', 'Via Rizzoli 8, Bologna', 60);
+
+-- ─────────────────────────────────────
+-- TAG
+-- ─────────────────────────────────────
+INSERT INTO tag (name) VALUES
+('Java'),
+('Spring Boot'),
+('DevOps'),
+('Frontend'),
+('Cloud');
+
+-- ─────────────────────────────────────
+-- SPEAKER
+-- ─────────────────────────────────────
+INSERT INTO speaker (first_name, last_name, bio, photo_url) VALUES
+('Marco', 'Ferrari', 'Senior Java developer con 10 anni di esperienza', NULL),
+('Laura', 'Conti', 'DevOps engineer specializzata in CI/CD', NULL),
+('Giulio', 'Marino', 'Full stack developer e speaker internazionale', NULL),
+('Anna', 'Ricci', 'Cloud architect certificata AWS e Azure', NULL),
+('Davide', 'Esposito', 'Frontend lead con focus su performance web', NULL);
+
+-- ─────────────────────────────────────
+-- EVENT (2 passati per testare feedback, 3 futuri per testare prenotazioni)
+-- organizer_id = 2 (organizer@eventhub.com)
+-- ─────────────────────────────────────
+INSERT INTO event (title, description, start_date, end_date, standard_price, vip_price, venue_id, organizer_id) VALUES
+('Workshop Spring Boot Avanzato',    'Deep dive su Spring Boot 3.x',         '2026-04-10 09:00:00', '2026-04-10 18:00:00', 49.99, 89.99, 1, 2),
+('Conferenza Java Day 2026',         'Il meglio del mondo Java raccolto qui', '2026-05-01 09:00:00', '2026-05-01 17:00:00', 29.99, 59.99, 2, 2),
+('DevOps Summit Roma',               'CI/CD, Docker, Kubernetes e altro',     '2026-06-15 09:00:00', '2026-06-15 18:00:00', 39.99, 79.99, 1, 2),
+('Frontend Masterclass',             'React, Vue e vanilla JS a confronto',   '2026-07-20 10:00:00', '2026-07-20 17:00:00', 34.99, 69.99, 3, 2),
+('Cloud Native Day Milano',          'Microservizi e architetture cloud',      '2026-08-05 09:00:00', '2026-08-05 18:00:00', 44.99, 84.99, 2, 2);
+
+-- ─────────────────────────────────────
+-- EVENT_TAG
+-- ─────────────────────────────────────
+INSERT INTO event_tag (event_id, tag_id) VALUES
+(1, 1), (1, 2),
+(2, 1),
+(3, 3),
+(4, 4),
+(5, 5);
+
+-- ─────────────────────────────────────
+-- EVENT_SPEAKER
+-- ─────────────────────────────────────
+INSERT INTO event_speaker (event_id, speaker_id) VALUES
+(1, 1), (1, 2),
+(2, 1), (2, 3),
+(3, 2),
+(4, 5),
+(5, 4), (5, 3);
+
+-- ─────────────────────────────────────
+-- TICKET (user_id = 1 = user@eventhub.com)
+-- ─────────────────────────────────────
+INSERT INTO ticket (type, price, status, user_id, event_id) VALUES
+('STANDARD', 49.99, 'ACTIVE',    1, 1),
+('VIP',      59.99, 'ACTIVE',    1, 2),
+('STANDARD', 39.99, 'ACTIVE',    1, 3),
+('VIP',      69.99, 'CANCELLED', 1, 4),
+('STANDARD', 44.99, 'ACTIVE',    1, 5);
+
+-- ─────────────────────────────────────
+-- FEEDBACK (solo su eventi passati — event 1 e 2)
+-- user_id = 1 = user@eventhub.com
+-- ─────────────────────────────────────
+INSERT INTO feedback (rating, comment, user_id, event_id) VALUES
+(5, 'Ottimo workshop, molto pratico e ben strutturato!', 1, 1),
+(4, 'Bella conferenza, qualche talk poteva essere più approfondito', 1, 2);
