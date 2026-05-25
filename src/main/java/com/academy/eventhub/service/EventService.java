@@ -69,7 +69,7 @@ public class EventService {
 
         // restituisco gli eventi con i posti rimasti
         return events.stream()
-                .map(this::toResponseWithSeats)
+                .map(this::toResponseWithSeats)     // applica il metodo toResponseWithSeats a ogni elemento
                 .toList();
     }
 
