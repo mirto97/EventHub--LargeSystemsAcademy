@@ -7,6 +7,9 @@ import lombok.*;
 @Schema(description = "Dati di un tag")
 public class TagResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // del tag espongo solo il nome
+
     @Schema(description = "ID tag", example = "1")
     private int id;
 

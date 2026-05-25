@@ -8,6 +8,10 @@ import lombok.*;
 @Schema(description = "Dati per lasciare un feedback su un evento")
 public class FeedbackRequestDTO {
 
+    // request: client -> server (qua non mi serve l'id)
+    // della recensione prendo solo:
+    // voto, commento, id dell'evento
+
     @NotNull(message = "Il voto è obbligatorio")
     @Min(value = 1, message = "Il voto minimo è 1")
     @Max(value = 5, message = "Il voto massimo è 5")

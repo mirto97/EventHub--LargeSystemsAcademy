@@ -9,6 +9,10 @@ import lombok.*;
 @Schema(description = "Dati per la prenotazione di un biglietto")
 public class TicketRequestDTO {
 
+    // request: client -> server (qua non mi serve l'id)
+    // del biglietto prendo solo:
+    // tipo e id dell'evento
+
     @NotNull(message = "Il tipo di biglietto è obbligatorio")
     @Schema(description = "Tipo di biglietto", example = "STANDARD")
     private Ticket.TicketType type;

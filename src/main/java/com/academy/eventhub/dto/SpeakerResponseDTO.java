@@ -7,6 +7,10 @@ import lombok.*;
 @Schema(description = "Dati di un relatore")
 public class SpeakerResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // del relatore espongo solo:
+    // nome, cognome, bio, link foto
+
     @Schema(description = "ID relatore", example = "1")
     private int id;
 

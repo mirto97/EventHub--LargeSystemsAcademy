@@ -7,6 +7,10 @@ import lombok.*;
 @Schema(description = "Dati di un feedback")
 public class FeedbackResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // della recensione espongo solo:
+    // voto, commento, l'utente che commenta, id e titolo dell'evento
+
     @Schema(description = "ID feedback", example = "1")
     private int id;
 

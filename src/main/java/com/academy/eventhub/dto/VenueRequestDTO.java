@@ -10,6 +10,10 @@ import lombok.*;
 @Schema(description = "Dati per la creazione o modifica di una sede")
 public class VenueRequestDTO {
 
+    // request: client -> server (qua non mi serve l'id)
+    // della location prendo solo:
+    // nome, indirizzo e capacità massima
+
     @NotBlank(message = "Il nome è obbligatorio")
     @Schema(description = "Nome della sede", example = "Centro Congressi Roma")
     private String name;

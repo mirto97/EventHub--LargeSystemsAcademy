@@ -9,6 +9,7 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface UserProfileMapper {
+
     UserProfileResponseDTO toResponseDTO(UserProfile profile);
     
     @Mapping(target = "id", ignore = true)
@@ -18,4 +19,7 @@ public interface UserProfileMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     void updateEntity(UserProfileRequestDTO dto, @MappingTarget UserProfile profile);
+    // @MappingTarget non crea un nuovo oggetto, aggiorna quello esistente
+    // copia i campi del dto dentro all'entità
+    // infatti ignoriamo l'id perchè deve rimanere invariato
 }

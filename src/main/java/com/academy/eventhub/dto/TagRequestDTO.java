@@ -8,6 +8,9 @@ import lombok.*;
 @Schema(description = "Dati per la creazione di un tag")
 public class TagRequestDTO {
 
+    // request: client -> server (qua non mi serve l'id)
+    // dell'argomento prendo solo: nome
+
     @NotBlank(message = "Il nome del tag è obbligatorio")
     @Schema(description = "Nome del tag", example = "Java")
     private String name;

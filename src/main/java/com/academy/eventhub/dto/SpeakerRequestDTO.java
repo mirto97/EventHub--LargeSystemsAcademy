@@ -8,6 +8,10 @@ import lombok.*;
 @Schema(description = "Dati per la creazione o modifica di un relatore")
 public class SpeakerRequestDTO {
 
+    // request: client -> server (qua non mi serve l'id)
+    // del relatore prendo solo:
+    // nome, cognome, bio, link della foto
+
     @NotBlank(message = "Il nome è obbligatorio")
     @Schema(description = "Nome", example = "Mario")
     private String firstName;

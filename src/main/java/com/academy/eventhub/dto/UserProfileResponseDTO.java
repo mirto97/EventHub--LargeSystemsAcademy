@@ -7,6 +7,10 @@ import lombok.*;
 @Schema(description = "Dati del profilo utente")
 public class UserProfileResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // del profilo dell'utente espongo solo:
+    // nome, cognome, bio, città, link foto
+
     @Schema(description = "ID profilo", example = "1")
     private int id;
 

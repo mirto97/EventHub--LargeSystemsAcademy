@@ -12,7 +12,9 @@ import lombok.*;
 @Schema(description = "Dati per la creazione o modifica di un evento")
 public class EventRequestDTO {
 
-    // TODO commentare i dto, magari fare un sunto a parte, non riga per riga
+    // request: client -> server (qua non mi serve l'id)
+    // dell'evento prendo solo:
+    // titolo, descrizione, ora di inizio e di fine, prezzo standard e vip, id della location, ids degli argomenti e dei relatori
 
     @NotBlank(message = "Il titolo è obbligatorio")
     @Schema(description = "Titolo dell'evento", example = "Workshop Spring Boot")
@@ -50,11 +52,16 @@ public class EventRequestDTO {
     private List<Integer> speakerIds;
 
 
+    /**
+     * metodo di verifica che controlla se la data di fine è successiva a quella di inizio
+     * @return true se valida
+     */
     @AssertTrue(message = "La data di fine deve essere successiva alla data di inizio")
     @Schema(hidden = true)  // altrimenti swagger lo considererebbe come un getter, glielo faccio ignorare
     public boolean isEndDateAfterStartDate() {
         if (startDate == null || endDate == null) 
-            return true;
+            return true;    // se manca una delle 2 date ci pensa già il notnull quindi restituisco true per non dare doppio errore
+
         return endDate.isAfter(startDate);
     }
 }

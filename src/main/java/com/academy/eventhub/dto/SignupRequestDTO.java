@@ -10,6 +10,9 @@ import lombok.*;
 @Schema(description = "Dati per la registrazione di un nuovo utente")
 public class SignupRequestDTO {
 
+    // request: client -> server (qua non mi serve l'id)
+    // per far accedere prendo solo: email e password
+
     @Email(message = "Email non valida")
     @NotBlank(message = "L'email è obbligatoria")
     @Schema(description = "Email dell'utente", example = "mario@example.com")

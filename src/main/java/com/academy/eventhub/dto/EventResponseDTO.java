@@ -11,6 +11,11 @@ import lombok.*;
 @Schema(description = "Dati di un evento")
 public class EventResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // dell'evento restituisco solo: 
+    // id, titolo, descrizione, ora di inizio e di fine, prezzo standard e vip, 
+      // posti disponibili, organizzatore, location e gli argomenti dell'evento  
+
     @Schema(description = "ID evento", example = "1")
     private int id;
 

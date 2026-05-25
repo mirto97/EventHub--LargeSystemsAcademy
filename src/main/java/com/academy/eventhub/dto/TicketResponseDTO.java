@@ -10,6 +10,10 @@ import java.math.BigDecimal;
 @Schema(description = "Dati di un biglietto prenotato")
 public class TicketResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // del biglietto espongo solo:
+    // tipo, prezzo, stato, id e titolo dell'evento
+
     @Schema(description = "ID biglietto", example = "1")
     private int id;
 

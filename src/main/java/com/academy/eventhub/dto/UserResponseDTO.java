@@ -8,6 +8,11 @@ import lombok.*;
 @Schema(description = "Dati pubblici di un utente")
 public class UserResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // TODO non ha una request?
+    // dell'utente espongo solo: 
+    // email, ruolo e stato
+
     @Schema(description = "ID utente", example = "1")
     private int id;
 

@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TagMapper {
+    
     TagResponseDTO toResponseDTO(Tag tag);
 
     @Mapping(target = "id", ignore = true)

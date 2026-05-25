@@ -9,6 +9,7 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface SpeakerMapper {
+
     SpeakerResponseDTO toResponseDTO(Speaker speaker);
     
     @Mapping(target = "id", ignore = true)
@@ -16,4 +17,7 @@ public interface SpeakerMapper {
     
     @Mapping(target = "id", ignore = true)
     void updateEntity(SpeakerRequestDTO dto, @MappingTarget Speaker speaker);
+    // @MappingTarget non crea un nuovo oggetto, aggiorna quello esistente
+    // copia i campi del dto dentro all'entità
+    // infatti ignoriamo l'id perchè deve rimanere invariato
 }

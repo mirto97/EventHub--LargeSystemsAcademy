@@ -8,6 +8,10 @@ import lombok.*;
 @Schema(description = "Dati per la creazione o aggiornamento del profilo utente")
 public class UserProfileRequestDTO {
 
+    // request: client -> server (qua non mi serve l'id)
+    // del profilo dell'utente prendo solo:
+    // nome, cognome, bio, citàà, link della foto
+
     @NotBlank(message = "Il nome è obbligatorio")
     @Schema(description = "Nome", example = "Mario")
     private String firstName;

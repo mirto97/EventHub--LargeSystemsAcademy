@@ -7,6 +7,10 @@ import lombok.*;
 @Schema(description = "Dati di una sede")
 public class VenueResponseDTO {
 
+    // response: server -> client (solo qua le annotation swagger)
+    // della location restituisco solo: 
+    // nome, indirizzo e capacità massima
+
     @Schema(description = "ID sede", example = "1")
     private int id;
 
